@@ -22,7 +22,13 @@ export type BrandInputs = {
   guidelinesUrls: string[]; // deprecated; prefer guidelinesText
   guidelinesText?: string;
   images: { id: string; name: string; previewUrl?: string }[];
-  files: { id: string; name: string; type: string; size: number; url?: string }[];
+  files: {
+    id: string;
+    name: string;
+    type: string;
+    size: number;
+    url?: string;
+  }[];
 };
 
 export type StrategyInputs = {
@@ -39,7 +45,12 @@ export type PhaseResult = {
   phase: 1 | 2 | 3 | 4;
   summary: string;
   artifacts: any[];
-  candidates?: { id: string; name: string; rationale: string; highlights: string[] }[];
+  candidates?: {
+    id: string;
+    name: string;
+    rationale: string;
+    highlights: string[];
+  }[];
 };
 
 export type CalendarEntry = {
@@ -88,7 +99,10 @@ export async function createProject(input: {
   duration: Duration;
 }): Promise<{ projectId: string }> {
   if (IS_REMOTE) {
-    return http<{ projectId: string }>(`/projects`, { method: "POST", body: JSON.stringify(input) });
+    return http<{ projectId: string }>(`/projects`, {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
   }
   const id = nanoid(8);
   const projects = read<Record<string, ProjectMeta>>(LS_PROJECTS, {});
@@ -105,7 +119,9 @@ export async function createProject(input: {
   return new Promise((res) => setTimeout(() => res({ projectId: id }), 300));
 }
 
-export async function getProject(projectId: string): Promise<ProjectMeta | null> {
+export async function getProject(
+  projectId: string
+): Promise<ProjectMeta | null> {
   if (IS_REMOTE) {
     return http<ProjectMeta>(`/projects/${projectId}`);
   }
@@ -113,21 +129,37 @@ export async function getProject(projectId: string): Promise<ProjectMeta | null>
   return projects[projectId] ?? null;
 }
 
-export async function updateProject(projectId: string, patch: Partial<ProjectMeta>): Promise<void> {
+export async function updateProject(
+  projectId: string,
+  patch: Partial<ProjectMeta>
+): Promise<void> {
   if (IS_REMOTE) {
-    await http<void>(`/projects/${projectId}`, { method: "PUT", body: JSON.stringify(patch) });
+    await http<void>(`/projects/${projectId}`, {
+      method: "PUT",
+      body: JSON.stringify(patch),
+    });
     return;
   }
   const projects = read<Record<string, ProjectMeta>>(LS_PROJECTS, {});
   const current = projects[projectId];
   if (!current) return;
-  projects[projectId] = { ...current, ...patch, updatedAt: new Date().toISOString() } as ProjectMeta;
+  projects[projectId] = {
+    ...current,
+    ...patch,
+    updatedAt: new Date().toISOString(),
+  } as ProjectMeta;
   write(LS_PROJECTS, projects);
 }
 
-export async function createRun(input: { projectId: string; snapshot?: { brand?: BrandInputs; strategy?: StrategyInputs } }): Promise<{ runId: string }> {
+export async function createRun(input: {
+  projectId: string;
+  snapshot?: { brand?: BrandInputs; strategy?: StrategyInputs };
+}): Promise<{ runId: string }> {
   if (IS_REMOTE) {
-    return http<{ runId: string }>(`/runs`, { method: "POST", body: JSON.stringify(input) });
+    return http<{ runId: string }>(`/runs`, {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
   }
   const runId = nanoid(10);
   const runs = read<Record<string, RunSnapshot>>(LS_RUNS, {});
@@ -150,7 +182,10 @@ export async function getRun(runId: string): Promise<RunSnapshot | null> {
   return runs[runId] ?? null;
 }
 
-export async function savePhaseResult(runId: string, result: PhaseResult): Promise<void> {
+export async function savePhaseResult(
+  runId: string,
+  result: PhaseResult
+): Promise<void> {
   if (IS_REMOTE) return; // backend persists
   const runs = read<Record<string, RunSnapshot>>(LS_RUNS, {});
   const run = runs[runId];
@@ -159,9 +194,15 @@ export async function savePhaseResult(runId: string, result: PhaseResult): Promi
   write(LS_RUNS, runs);
 }
 
-export async function selectStrategy(runId: string, selectedStrategyId: string): Promise<{ selectedStrategyId: string }> {
+export async function selectStrategy(
+  runId: string,
+  selectedStrategyId: string
+): Promise<{ selectedStrategyId: string }> {
   if (IS_REMOTE) {
-    return http<{ selectedStrategyId: string }>(`/runs/${runId}/select-strategy`, { method: "POST", body: JSON.stringify({ selectedStrategyId }) });
+    return http<{ selectedStrategyId: string }>(
+      `/runs/${runId}/select-strategy`,
+      { method: "POST", body: JSON.stringify({ selectedStrategyId }) }
+    );
   }
   const runs = read<Record<string, RunSnapshot>>(LS_RUNS, {});
   const run = runs[runId];
@@ -171,7 +212,11 @@ export async function selectStrategy(runId: string, selectedStrategyId: string):
   return { selectedStrategyId };
 }
 
-export async function appendCalendarDay(runId: string, date: string, entries: CalendarEntry[]): Promise<void> {
+export async function appendCalendarDay(
+  runId: string,
+  date: string,
+  entries: CalendarEntry[]
+): Promise<void> {
   if (IS_REMOTE) return; // backend persists
   const runs = read<Record<string, RunSnapshot>>(LS_RUNS, {});
   const run = runs[runId];
@@ -181,15 +226,60 @@ export async function appendCalendarDay(runId: string, date: string, entries: Ca
 }
 
 // Simulated extraction from uploaded files/images
-export async function extractBusinessDNA(input: { projectId?: string; files: BrandInputs["files"]; images: BrandInputs["images"] }): Promise<Pick<BrandInputs, "toneOfVoice" | "primaryColors">> {
+export async function extractBusinessDNA(input: {
+  projectId?: string;
+  files: BrandInputs["files"];
+  images: BrandInputs["images"];
+}): Promise<Pick<BrandInputs, "toneOfVoice" | "primaryColors">> {
   if (IS_REMOTE && input.projectId) {
-    return http(`/projects/${input.projectId}/extract-dna`, { method: "POST", body: JSON.stringify({}) });
+    return http(`/projects/${input.projectId}/extract-dna`, {
+      method: "POST",
+      body: JSON.stringify({}),
+    });
   }
   // Pretend “analysis”: seed from filenames to vary results
-  const names = [...input.files.map((f) => f.name.toLowerCase()), ...input.images.map((i) => i.name.toLowerCase())].join(" ");
-  const tones = ["Confident", "Witty", "Practical", "Friendly", "Bold", "Helpful"];
-  const colors = ["#0ea5e9", "#111827", "#f59e0b", "#10b981", "#8b5cf6", "#ef4444"];
-  const pick = (seed: number, list: string[], n: number) => Array.from({ length: n }, (_, i) => list[(seed + i) % list.length]);
+  const names = [
+    ...input.files.map((f) => f.name.toLowerCase()),
+    ...input.images.map((i) => i.name.toLowerCase()),
+  ].join(" ");
+  const tones = [
+    "Confident",
+    "Witty",
+    "Practical",
+    "Friendly",
+    "Bold",
+    "Helpful",
+  ];
+  const colors = [
+    "#0ea5e9",
+    "#111827",
+    "#f59e0b",
+    "#10b981",
+    "#8b5cf6",
+    "#ef4444",
+  ];
+  const pick = (seed: number, list: string[], n: number) =>
+    Array.from({ length: n }, (_, i) => list[(seed + i) % list.length]);
   const seed = names.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % 7;
-  return new Promise((res) => setTimeout(() => res({ toneOfVoice: pick(seed, tones, 3), primaryColors: pick(seed + 2, colors, 3) }), 400));
+  return new Promise((res) =>
+    setTimeout(
+      () =>
+        res({
+          toneOfVoice: pick(seed, tones, 3),
+          primaryColors: pick(seed + 2, colors, 3),
+        }),
+      400
+    )
+  );
+}
+
+export async function getProjects(): Promise<ProjectMeta[]> {
+  if (IS_REMOTE) {
+    return http<ProjectMeta[]>(`/projects`);
+  }
+  // Fallback for local storage mode (if needed)
+  const projects = read<Record<string, ProjectMeta>>("sim:projects", {});
+  return Object.values(projects).sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
 }
