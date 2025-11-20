@@ -230,7 +230,9 @@ export async function extractBusinessDNA(input: {
   projectId?: string;
   files: BrandInputs["files"];
   images: BrandInputs["images"];
-}): Promise<Pick<BrandInputs, "toneOfVoice" | "primaryColors">> {
+}): Promise<
+  Pick<BrandInputs, "toneOfVoice" | "primaryColors" | "guidelinesText">
+> {
   if (IS_REMOTE && input.projectId) {
     return http(`/projects/${input.projectId}/extract-dna`, {
       method: "POST",

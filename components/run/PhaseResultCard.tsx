@@ -1,35 +1,80 @@
 "use client";
-export function PhaseResultCard({ phase, summary, artifacts }: { phase: number; summary: string; artifacts: any[] }) {
+import ReactMarkdown from "react-markdown";
+
+export function PhaseResultCard({
+  phase,
+  summary,
+  artifacts,
+}: {
+  phase: number;
+  summary: string;
+  artifacts: any[];
+}) {
   return (
-    <div className="border rounded-lg p-4">
-      <div className="text-sm text-gray-500 mb-1">Result — Phase {phase}</div>
-      <div className="font-medium mb-2">{summary}</div>
-      <div className="grid gap-3">
-        {artifacts.map((a: any, i: number) => (
-          <div key={i} className="rounded border p-2">
-            {a.title && <div className="font-medium text-sm mb-1">{a.title}</div>}
-            {a.bullets && (
-              <ul className="list-disc pl-5 text-sm">
-                {a.bullets.map((b: string, j: number) => <li key={j}>{b}</li>)}
-              </ul>
-            )}
-            {a.items && (
-              <ul className="list-disc pl-5 text-sm">
-                {a.items.map((b: string, j: number) => <li key={j}>{b}</li>)}
-              </ul>
-            )}
-            {a.channel && (
-              <div className="text-sm">
-                <div><b>Channel:</b> {a.channel}</div>
-                <div><b>KPIs:</b> {(a.kpis||[]).join(', ')}</div>
-                <div><b>Budget:</b> {a.budget}</div>
-                <div><b>Sample:</b> {a.samplePost}</div>
+    <div className="border rounded-lg p-4 bg-white shadow-sm h-full flex flex-col">
+      <div className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">
+        Phase {phase} Output
+      </div>
+      <div className="font-semibold text-gray-900 mb-3">{summary}</div>
+
+      <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar flex-1">
+        {artifacts.map((a: any, i: number) => {
+          // 1. Handle Plain Strings (e.g., Backend Reports/Strategies)
+          // We use ReactMarkdown to parse **bold**, *italics*, lists, etc.
+          if (typeof a === "string") {
+            return (
+              <div
+                key={i}
+                className="text-sm text-gray-700 border-l-2 border-gray-200 pl-3 mb-2 prose prose-sm max-w-none"
+              >
+                <ReactMarkdown>{a}</ReactMarkdown>
               </div>
-            )}
-          </div>
-        ))}
+            );
+          }
+
+          // 2. Handle Structured Objects (Legacy/Alternative format)
+          return (
+            <div key={i} className="rounded border p-3 bg-gray-50">
+              {a.title && (
+                <div className="font-medium text-sm mb-1 text-gray-900">
+                  {a.title}
+                </div>
+              )}
+
+              {a.bullets && (
+                <ul className="list-disc pl-4 text-sm text-gray-600 space-y-1">
+                  {a.bullets.map((b: string, j: number) => (
+                    <li key={j}>{b}</li>
+                  ))}
+                </ul>
+              )}
+
+              {a.items && (
+                <ul className="list-disc pl-4 text-sm text-gray-600 space-y-1">
+                  {a.items.map((b: string, j: number) => (
+                    <li key={j}>{b}</li>
+                  ))}
+                </ul>
+              )}
+
+              {a.channel && (
+                <div className="text-xs text-gray-500 grid grid-cols-2 gap-2 mt-2">
+                  <div>
+                    <span className="font-semibold">Channel:</span> {a.channel}
+                  </div>
+                  <div>
+                    <span className="font-semibold">Budget:</span> {a.budget}
+                  </div>
+                  <div className="col-span-2">
+                    <span className="font-semibold">KPIs:</span>{" "}
+                    {(a.kpis || []).join(", ")}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 }
-
