@@ -59,6 +59,7 @@ export default function RunPage() {
               break;
             case "done":
               run.setPhaseStatus(4, "done");
+              run.setCurrentPhase(5);
               run.setStatus("done");
               setConn("closed");
               break;
@@ -85,7 +86,7 @@ export default function RunPage() {
     setStrategyPrompt(null);
   }
 
-  const currentLogs = run.theater[run.currentPhase as 1|2|3|4] || [];
+  const currentLogs = run.theater[run.currentPhase as 1|2|3|4|5] || [];
 
   return (
     <div className="space-y-4">
@@ -103,11 +104,19 @@ export default function RunPage() {
       </div>
 
       {strategyPrompt && (
-        <StrategySelectModal open items={strategyPrompt.items} recommendedId={strategyPrompt.recommendedId} onSelect={confirmStrategy} onClose={() => setStrategyPrompt(null)} />
+        <StrategySelectModal
+          open
+          items={strategyPrompt.items}
+          recommendedId={strategyPrompt.recommendedId}
+          brief={project.strategy}
+          results={run.results}
+          onSelect={confirmStrategy}
+          onClose={() => setStrategyPrompt(null)}
+        />
       )}
 
       {run.status === "done" && (
-        <div className="rounded bg-green-50 border border-green-200 p-3 text-green-800 text-sm">Run completed. Open Calendar for the plan.</div>
+        <div className="rounded bg-green-50 border border-green-200 p-3 text-green-800 text-sm">Run completed. Open Calendar, then click a day to generate assets (Phase 5).</div>
       )}
     </div>
   );

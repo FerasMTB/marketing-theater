@@ -147,7 +147,7 @@ export default function StrategyInputsPage() {
           </label>
         </div>
         {align && (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3">
             <div>
               <label className="block text-sm mb-1">Region</label>
               <select
@@ -158,17 +158,6 @@ export default function StrategyInputsPage() {
                 <option>US</option>
                 <option>EU</option>
                 <option>APAC</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm mb-1">Time window (weeks)</label>
-              <select
-                defaultValue="4"
-                className="w-full border rounded px-3 py-2"
-              >
-                <option>2</option>
-                <option>4</option>
-                <option>8</option>
               </select>
             </div>
           </div>

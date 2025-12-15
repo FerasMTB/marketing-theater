@@ -10,6 +10,8 @@ npm run dev
 
 Open http://localhost:3000 to see the app.
 
+Tip: open http://localhost:3000/projects to browse all projects (mock mode auto-seeds a couple demo projects).
+
 This app can run with mock data or a real backend. See Backend Integration below.
 
 ## Modes

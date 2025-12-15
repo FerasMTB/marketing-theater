@@ -1,18 +1,38 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
 import { useRunStore } from "../../../../store/useRunStore";
 import { MonthGrid } from "../../../../components/calendar/MonthGrid";
 import { useProjectStore } from "../../../../store/useProjectStore";
 import { EventModal } from "../../../../components/calendar/EventModal";
 import type { CalendarEntry } from "../../../../store/useRunStore";
+import { useParams } from "next/navigation";
+import { getLatestRunForProject } from "../../../../lib/api";
 
 export default function CalendarPage() {
+  const { id } = useParams<{ id: string }>();
   const run = useRunStore();
   const project = useProjectStore();
   const [month, setMonth] = useState(dayjs(project.duration.start).format("YYYY-MM-01"));
   const entries = useMemo(() => run.calendar, [run.calendar]);
-  const [open, setOpen] = useState< (CalendarEntry & { description?: string; relatedEvents?: string[] }) | null >(null);
+  const [open, setOpen] = useState<CalendarEntry | null>(null);
+
+  useEffect(() => {
+    // Hydrate calendar from latest persisted run (mock/remote) after refresh.
+    if (!id) return;
+    if (Object.keys(run.calendar || {}).length) return;
+    getLatestRunForProject(id)
+      .then((snap) => {
+        if (!snap) return;
+        run.setRunId(snap.runId);
+        run.setCalendar(snap.calendar as unknown as Record<string, CalendarEntry[]>);
+        run.setPhaseStatus(4, "done");
+        run.setCurrentPhase(5);
+        run.setStatus("done");
+      })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   function prev() {
     setMonth((m) => dayjs(m).subtract(1, "month").format("YYYY-MM-01"));
@@ -70,7 +90,12 @@ export default function CalendarPage() {
           <button className="px-2 py-1 rounded bg-black text-white" onClick={downloadJSON}>Export JSON</button>
         </div>
       </div>
-      <MonthGrid monthISO={month} entriesByDay={entries} onEventClick={(e) => setOpen(e as any)} />
+      <MonthGrid
+        monthISO={month}
+        entriesByDay={entries}
+        onEventClick={(e) => setOpen(e)}
+        dayHref={(dateISO) => `/projects/${id}/calendar/${dateISO}`}
+      />
       <EventModal entry={open} onClose={() => setOpen(null)} />
     </div>
   );

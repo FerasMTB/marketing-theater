@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createProject } from "../lib/api";
@@ -12,20 +13,17 @@ export default function Home() {
   }, []);
   const [name, setName] = useState("Untitled Project");
   const [region, setRegion] = useState("US");
-  const [start, setStart] = useState(new Date().toISOString().slice(0, 10));
-  const [end, setEnd] = useState(
-    new Date(Date.now() + 1000 * 60 * 60 * 24 * 28).toISOString().slice(0, 10)
-  );
   const [loading, setLoading] = useState(false);
 
   async function onContinue() {
     setLoading(true);
+    const duration = projectStore.duration;
     const { projectId } = await createProject({
       name,
       region,
-      duration: { start, end },
+      duration,
     });
-    projectStore.updateMeta({ name, region, duration: { start, end } });
+    projectStore.updateMeta({ name, region, duration });
     projectStore.setProjectId(projectId);
     router.push(`/projects/${projectId}/inputs/brand`);
   }
@@ -33,8 +31,15 @@ export default function Home() {
   return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="w-full max-w-xl p-6 border rounded-lg shadow-sm">
-        <h1 className="text-2xl font-semibold mb-1">Welcome</h1>
-        <p className="text-sm text-gray-600 mb-6">Create a project to begin.</p>
+        <div className="flex items-start justify-between gap-3 mb-6">
+          <div>
+            <h1 className="text-2xl font-semibold mb-1">Welcome</h1>
+            <p className="text-sm text-gray-600">Create a project to begin.</p>
+          </div>
+          <Link href="/projects" className="text-sm underline">
+            All projects
+          </Link>
+        </div>
         <div className="space-y-4">
           <div>
             <label className="block text-sm mb-1">Project Name</label>
@@ -57,26 +62,6 @@ export default function Home() {
                 <option>EU</option>
                 <option>APAC</option>
               </select>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm mb-1">Start</label>
-              <input
-                type="date"
-                value={start}
-                onChange={(e) => setStart(e.target.value)}
-                className="w-full border rounded px-3 py-2"
-              />
-            </div>
-            <div>
-              <label className="block text-sm mb-1">End</label>
-              <input
-                type="date"
-                value={end}
-                onChange={(e) => setEnd(e.target.value)}
-                className="w-full border rounded px-3 py-2"
-              />
             </div>
           </div>
           <button
