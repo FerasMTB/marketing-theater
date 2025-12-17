@@ -17,16 +17,20 @@ export default function Home() {
   const [region, setRegion] = useState("US");
 
   const [start, setStart] = useState(new Date().toISOString().slice(0, 10));
-  
-  // --- MODIFIED: Default to 7 days (1 week) instead of 28 ---
   const [end, setEnd] = useState(
     new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString().slice(0, 10)
   );
-  // ----------------------------------------------------------
 
   const [loading, setLoading] = useState(false);
 
+  // --- ADDED: Validation Logic ---
+  // Simple string comparison works reliably for YYYY-MM-DD format
+  const isDateInvalid = start > end;
+  // -------------------------------
+
   async function onContinue() {
+    if (isDateInvalid) return; // Extra safety check
+    
     setLoading(true);
     const duration = { start, end };
     const { projectId } = await createProject({
@@ -90,16 +94,27 @@ export default function Home() {
               <label className="block text-sm mb-1">End</label>
               <input
                 type="date"
+                min={start} /* ADDED: Prevents picking earlier dates in UI */
                 value={end}
                 onChange={(e) => setEnd(e.target.value)}
-                className="w-full border rounded px-3 py-2"
+                className={`w-full border rounded px-3 py-2 ${
+                  isDateInvalid ? "border-red-500 focus:ring-red-500" : ""
+                }`}
               />
             </div>
           </div>
 
+          {/* --- ADDED: Error Message --- */}
+          {isDateInvalid && (
+            <p className="text-sm text-red-500">
+              End date cannot be earlier than start date.
+            </p>
+          )}
+          {/* ---------------------------- */}
+
           <button
             onClick={onContinue}
-            disabled={loading}
+            disabled={loading || isDateInvalid} /* ADDED: Disable if invalid */
             className="mt-2 inline-flex items-center justify-center rounded bg-black text-white px-4 py-2 disabled:opacity-50"
           >
             {loading ? "Creating..." : "Continue"}
