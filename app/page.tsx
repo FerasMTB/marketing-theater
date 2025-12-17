@@ -8,16 +8,27 @@ import { useProjectStore } from "../store/useProjectStore";
 export default function Home() {
   const router = useRouter();
   const projectStore = useProjectStore();
+
   useEffect(() => {
     projectStore.reset();
   }, []);
+
   const [name, setName] = useState("Untitled Project");
   const [region, setRegion] = useState("US");
+
+  const [start, setStart] = useState(new Date().toISOString().slice(0, 10));
+  
+  // --- MODIFIED: Default to 7 days (1 week) instead of 28 ---
+  const [end, setEnd] = useState(
+    new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString().slice(0, 10)
+  );
+  // ----------------------------------------------------------
+
   const [loading, setLoading] = useState(false);
 
   async function onContinue() {
     setLoading(true);
-    const duration = projectStore.duration;
+    const duration = { start, end };
     const { projectId } = await createProject({
       name,
       region,
@@ -64,6 +75,28 @@ export default function Home() {
               </select>
             </div>
           </div>
+          
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm mb-1">Start</label>
+              <input
+                type="date"
+                value={start}
+                onChange={(e) => setStart(e.target.value)}
+                className="w-full border rounded px-3 py-2"
+              />
+            </div>
+            <div>
+              <label className="block text-sm mb-1">End</label>
+              <input
+                type="date"
+                value={end}
+                onChange={(e) => setEnd(e.target.value)}
+                className="w-full border rounded px-3 py-2"
+              />
+            </div>
+          </div>
+
           <button
             onClick={onContinue}
             disabled={loading}
