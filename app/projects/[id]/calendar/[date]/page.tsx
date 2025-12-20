@@ -62,6 +62,7 @@ export default function CalendarDayPage() {
   const [busy, setBusy] = useState<null | "loadingVersions" | "generating" | "uploading">(null);
   const [error, setError] = useState<string | null>(null);
 
+  // --- 1. Load Day Entries ---
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -98,9 +99,10 @@ export default function CalendarDayPage() {
     return () => {
       mounted = false;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, date]);
 
+  // --- 2. Select Default Entry ---
   useEffect(() => {
     if (!dayEntries.length) {
       setSelectedEntryId(null);
@@ -109,6 +111,7 @@ export default function CalendarDayPage() {
     setSelectedEntryId((prev) => prev || dayEntries[0]!.id);
   }, [dayEntries]);
 
+  // --- 3. Load Versions for Selected Entry ---
   useEffect(() => {
     if (!selectedEntry) return;
     let mounted = true;
@@ -137,11 +140,44 @@ export default function CalendarDayPage() {
     };
   }, [id, selectedEntry?.id]);
 
+  // --- 4. Sync Draft Text ---
   useEffect(() => {
     if (!selectedEntry) return;
     if (isEditing) return;
     setDraftBaseText(current?.baseText || defaultBaseText(selectedEntry));
   }, [selectedEntry?.id, isEditing, current?.id]);
+
+  // --- 5. 🌟 NEW: Polling Logic for Async Generation ---
+  useEffect(() => {
+    // If no entry is selected or no versions exist, stop.
+    if (!selectedEntry || !current) return;
+
+    // Check if the current version already has a visual asset (Image or Carousel)
+    // Note: 'text' is always present, so we look specifically for visual types.
+    const hasMedia = current.assets.some(
+      (a) => a.kind === "image" || a.kind === "carousel"
+    );
+
+    // If we have media, we don't need to poll anymore.
+    if (hasMedia) return;
+
+    // If we don't have media yet (generation in progress), poll every 3 seconds
+    const intervalId = setInterval(() => {
+      getAssetVersions(id, selectedEntry.id)
+        .then((list) => {
+          setVersions(list);
+          // Safety: If the list shrank (unlikely) ensure cursor is valid
+          if (cursor >= list.length) {
+            setCursor(Math.max(0, list.length - 1));
+          }
+        })
+        .catch((err) => console.error("Polling failed", err));
+    }, 3000);
+
+    // Cleanup interval on unmount or when dependencies change (e.g. image arrives)
+    return () => clearInterval(intervalId);
+  }, [id, selectedEntry, current, cursor]);
+  // ---------------------------------------------------------
 
   const prettyDate = useMemo(() => {
     const d = dayjs(date);
